@@ -21,7 +21,3 @@ Simple PHP-based online shop with:
 - MySQL
 - PDO
 - HTML/CSS
-
-## 🔐 Notes
-Do not upload real database credentials.
-Use fake values in database.php or environment variables.
