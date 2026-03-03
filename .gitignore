@@ -1,0 +1,20 @@
+# Environment files
+.env
+.env.*
+
+# Database config (if you later use real credentials)
+app/config/database.php
+
+# Uploads (runtime data)
+storage/uploads/*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
