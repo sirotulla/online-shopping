@@ -1,13 +1,8 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Usage:
- *   require __DIR__.'/_layout.php';
- *   layout_header('Home', $user, $cartCount);
- *   ...page content...
- *   layout_footer();
- */
+// Load the language helper
+require_once __DIR__ . '/../app/helpers/lang.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -18,51 +13,40 @@ function e(string $value): string {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-/** Asset helper (keep simple) */
+/** Asset helper */
 function asset(string $path): string {
     return $path;
 }
 
-/** Send security headers safely (only if headers not already sent) */
+/** Send security headers safely */
 function send_security_headers(): void {
     if (headers_sent()) return;
-
     header('X-Frame-Options: DENY');
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
-
-    // CSP in Report-Only (dev-friendly)
-    header("Content-Security-Policy-Report-Only: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; frame-ancestors 'none';");
 }
 
-/**
- * Pull flash once (PRG-friendly).
- * Shows once, then deletes.
- */
 function flash_pull(): array {
     $flash = $_SESSION['flash'] ?? [];
     unset($_SESSION['flash']);
     return is_array($flash) ? $flash : [];
 }
 
-/**
- * Layout header
- * $user can be current_user() array or null.
- */
 function layout_header(string $title = 'EasyBuy Gifts', ?array $user = null, int $cartCount = 0): void
 {
     send_security_headers();
     $flash = flash_pull();
+    $currentLang = $_SESSION['lang'] ?? 'en';
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="<?= e($currentLang) ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($title) ?> — EasyBuy Gifts</title>
 
-  <!-- Theme bootstrap (prevents flash, sets html[data-theme]) -->
+  <link rel="icon" type="image/png" href="<?= e(asset('assets/favicon.png')) ?>">
+
   <script>
   (function(){
     try{
@@ -76,13 +60,13 @@ function layout_header(string $title = 'EasyBuy Gifts', ?array $user = null, int
   </script>
 
   <link rel="stylesheet" href="<?= e(asset('assets/style.css?v=' . filemtime(__DIR__ . '/assets/style.css'))) ?>">
-
 </head>
 
 <body>
 <div class="page-wrap">
 
 <header class="site-header">
+  
   <div class="container header-row">
     <a class="brand" href="index.php">
       <span class="brand-logo">🎁</span>
@@ -91,22 +75,33 @@ function layout_header(string $title = 'EasyBuy Gifts', ?array $user = null, int
     </a>
 
     <nav class="nav">
-      <a href="index.php">Home</a>
-      <a href="cart.php">🛒 Cart (<?= (int)$cartCount ?>)</a>
+      <a href="index.php"><?= __('nav_home') ?></a>
+      <a href="cart.php">🛒 <?= __('nav_cart') ?> (<?= (int)$cartCount ?>)</a>
 
-      <button class="btn btn-ghost" type="button" id="themeToggle" aria-label="Toggle theme" title="Toggle light/dark">
-        🌙
-      </button>
+      <div class="lang-switcher">
+          <?php
+            $params = $_GET;
+            $params['lang'] = 'en';
+            $enUrl = '?' . http_build_query($params);
+            $params['lang'] = 'uz';
+            $uzUrl = '?' . http_build_query($params);
+          ?>
+          <a href="<?= e($enUrl) ?>" class="<?= $currentLang === 'en' ? 'active-lang' : '' ?>">EN</a>
+          <span class="muted">|</span>
+          <a href="<?= e($uzUrl) ?>" class="<?= $currentLang === 'uz' ? 'active-lang' : '' ?>">UZ</a>
+      </div>
+
+      <button class="btn btn-ghost" type="button" id="themeToggle" aria-label="Toggle theme">🌙</button>
 
       <?php if ($user): ?>
         <?php if (($user['role'] ?? '') === 'admin'): ?>
-          <a href="admin/index.php">Admin</a>
+          <a href="admin/index.php"><?= __('nav_admin') ?></a>
         <?php endif; ?>
-        <a href="my_account.php">My Account</a>
-        <a class="btn btn-ghost" href="logout.php">Logout</a>
+        <a href="my_account.php"><?= __('nav_account') ?></a>
+        <a class="btn btn-ghost" href="logout.php"><?= __('nav_logout') ?></a>
       <?php else: ?>
-        <a href="login.php">Login</a>
-        <a class="btn btn-ghost" href="register.php">Register</a>
+        <a href="login.php"><?= __('nav_login') ?></a>
+        <a class="btn btn-ghost" href="register.php"><?= __('nav_register') ?></a>
       <?php endif; ?>
     </nav>
   </div>
@@ -122,8 +117,8 @@ function layout_header(string $title = 'EasyBuy Gifts', ?array $user = null, int
       <span class="flash-text"><?= e((string)$flash['ok']) ?></span>
     </div>
     <div class="flash-actions">
-      <a class="flash-link" href="cart.php">View cart</a>
-      <a class="flash-link" href="index.php">Continue shopping</a>
+      <a class="flash-link" href="cart.php"><?= __('flash_view_cart') ?></a>
+      <a class="flash-link" href="index.php"><?= __('flash_continue') ?></a>
     </div>
   </div>
 <?php endif; ?>
@@ -132,25 +127,82 @@ function layout_header(string $title = 'EasyBuy Gifts', ?array $user = null, int
 }
 
 function layout_footer(): void { ?>
-  </div><!-- /.container.main-container -->
-</main>
+  </div> </main>
 
 <footer class="site-footer">
-  <div class="container footer-row">
-    <div class="footer-left">
-      <div class="foot-brand">🎁 EasyBuy Gifts</div>
-      <div class="muted">Gifts • Souvenirs • Happy moments</div>
+  <div class="container">
+    <div class="footer-features">
+      <div class="feat-card">
+        <span class="feat-icon">🛡️</span>
+        <div class="feat-info">
+          <h4><?= __('feat_secure_title') ?></h4>
+          <p><?= __('feat_secure_desc') ?></p>
+        </div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📦</span>
+        <div class="feat-info">
+          <h4><?= __('feat_orders_title') ?></h4>
+          <p><?= __('feat_orders_desc') ?></p>
+        </div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">👑</span>
+        <div class="feat-info">
+          <h4><?= __('feat_admin_title') ?></h4>
+          <p><?= __('feat_admin_desc') ?></p>
+        </div>
+      </div>
     </div>
 
-    <div class="footer-right muted">
-      © <?= date('Y') ?> EasyBuy Gifts. All rights reserved.
+    <hr class="footer-sep">
+
+    <div class="footer-main-grid">
+      <div class="footer-column about">
+        <h3 class="footer-heading">EasyBuy Gifts</h3>
+        <p class="muted"><?= __('footer_about_desc') ?></p>
+      </div>
+
+      <div class="footer-column links">
+        <h3 class="footer-heading"><?= __('footer_links_title') ?></h3>
+        <ul class="foot-nav">
+          <li><a href="index.php"><?= __('nav_home') ?></a></li>
+          <li><a href="cart.php"><?= __('nav_cart') ?></a></li>
+          <li><a href="my_account.php"><?= __('nav_account') ?></a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column social">
+        <h3 class="footer-heading"><?= __('footer_contact_title') ?></h3>
+        <div class="social-stack">
+          <a href="https://t.me/easyshops_uz" target="_blank" class="social-link tg-chan">
+              <span class="icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+              </span> 
+              <?= __('footer_tg_channel') ?>
+          </a>
+          <a href="https://t.me/easyshops_uz_chat" target="_blank" class="social-link tg-admin">
+            <span class="icon">💬</span> <?= __('footer_tg_admin') ?>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="copy-text">
+        © <?= date('Y') ?> EasyBuy Gifts. <?= __('footer_rights') ?>
+      </div>
+      <div class="tagline-text muted">
+        <?= __('footer_tagline') ?>
+      </div>
     </div>
   </div>
 </footer>
 
-</div><!-- /.page-wrap -->
-
-<script>
+</div> <script>
 (function(){
   const key = "theme";
   const btn = document.getElementById("themeToggle");
@@ -176,4 +228,5 @@ function layout_footer(): void { ?>
 </body>
 </html>
 <?php } ?>
+
 
