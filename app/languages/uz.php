@@ -210,5 +210,17 @@ return [
     'footer_tg_admin' => 'Admin bilan bog‘lanish',
     'footer_about_title' => 'EasyBuy Gifts haqida',
     'footer_about_desc' => 'EasyBuy Gifts — original suvenirlar va premium sovg‘a kartalari uchun sizning ishonchli bozoringiz. Biz har bir tranzaksiya xavfsizligini va 24/7 avtomatlashtirilgan yetkazib berishni kafolatlaymiz.',
-  
+    // F.A.Q
+    'faq_title' => 'Ko‘p beriladigan savollar',
+    'faq_subtitle' => 'Marketpleysimiz va xizmatlarimiz haqida barcha kerakli ma’lumotlar.',
+    'btn_back_home' => 'Bosh sahifaga qaytish',
+    'faq_q1' => 'Qanday qilib sotib olaman?',
+    'faq_a1' => 'O‘zingizga yoqqan mahsulotni tanlang, savatga qo‘shing va to‘lovni amalga oshiring. To‘lov tasdiqlangach, mahsulot darhol hisobingizda ko‘rinadi.',
+    'faq_q2' => 'To‘lov usullari qanday?',
+    'faq_a2' => 'Biz Click, Payme va Bank o‘tkazmalarini qabul qilamiz. Shuningdek, ichki hamyoningizni to‘ldirib, undan xaridlar uchun foydalanishingiz mumkin.',
+    'faq_q3' => 'Xaridlarim xavfsizmi?',
+    'faq_a3' => 'Ha, barcha tranzaksiyalar himoyalangan. Biz faqat rasmiy va tekshirilgan xizmatlar bilan ishlaymiz.',
+    'faq_q4' => 'Muammo yuzaga kelsa nima qilish kerak?',
+    'faq_a4' => 'Agar savollaringiz yoki muammo bo‘lsa, footer-dagi Telegram tugmasi orqali admin bilan bog‘lanishingiz mumkin. Biz 24/7 aloqadamiz.',
+
 ];
