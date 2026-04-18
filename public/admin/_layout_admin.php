@@ -3,28 +3,20 @@ declare(strict_types=1);
 
 /**
  * Admin layout (shared header/footer + theme toggle)
- * Use with:
- *   require_once __DIR__ . '/_guard.php';
- *   require_once __DIR__ . '/_layout_admin.php';
- *   admin_layout_header('Admin — Something', $u);
- *   ...content...
- *   admin_layout_footer();
  */
 
-function e(string $v): string {
-    return htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+if (!function_exists('e')) {
+    function e(string $v): string {
+        return htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
 }
 
-/** Optional: same security headers idea as main layout */
+/** Security headers */
 function admin_send_security_headers(): void {
     if (headers_sent()) return;
-
     header('X-Frame-Options: DENY');
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
-
-    // Keep report-only like your main layout (safe for dev)
     header("Content-Security-Policy-Report-Only: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none';");
 }
 
@@ -33,13 +25,14 @@ function admin_layout_header(string $title, ?array $user = null): void
     admin_send_security_headers();
     ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= e($title) ?> — EasyBuy Gifts</title>
+  <title><?= e($title) ?> — Admin Panel</title>
 
-  <!-- Theme bootstrap (prevents flash + applies saved choice) -->
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+
   <script>
   (function(){
     try{
@@ -53,17 +46,17 @@ function admin_layout_header(string $title, ?array $user = null): void
   </script>
 
   <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
 </head>
-<body>
+<body class="admin-body">
 
-<div class="page-wrap"><!-- enables side background/glow via CSS -->
+<div class="page-wrap">
 
 <header class="site-header">
   <div class="container header-row">
     <a class="brand" href="index.php">
       <span class="brand-logo">🛡️</span>
-      <span class="brand-name">Admin</span>
-      <span class="brand-sub"><?= e($title) ?></span>
+      <div class="brand-name">ADMIN<span class="brand-sub">PANEL</span></div>
     </a>
 
     <nav class="nav">
@@ -73,39 +66,45 @@ function admin_layout_header(string $title, ?array $user = null): void
       <a href="products.php">Products</a>
       <a href="categories.php">Categories</a>
 
-      <button class="btn btn-ghost" type="button" id="themeToggle" aria-label="Toggle theme" title="Toggle light/dark">
-        🌙
-      </button>
-
-      <a class="btn btn-ghost" href="../logout.php">Logout</a>
+      <div style="display:flex; gap:8px; margin-left:10px; padding-left:10px; border-left:1px solid var(--line);">
+        <button class="btn btn-ghost" type="button" id="themeToggle" style="width:40px; padding:0;">🌙</button>
+        <a class="btn btn-ghost" href="../logout.php" style="color:var(--accent);">Exit</a>
+      </div>
     </nav>
   </div>
 </header>
 
 <main class="site-main">
-  <div class="container main-container">
-<?php
+  <div class="container">
+    <div style="margin-bottom:20px;">
+        <h1 style="margin:0; font-size:1.8rem; font-weight:900;"><?= e($title) ?></h1>
+        <div class="muted">System Management & Control</div>
+    </div>
+    
+    <div class="main-container"> <?php
 }
 
 function admin_layout_footer(): void
 {
 ?>
-  </div><!-- /.container.main-container -->
-</main>
+    </div></div></main>
 
 <footer class="site-footer">
-  <div class="container footer-row">
-    <div class="footer-left">
-      <div class="foot-brand">🛡️ Admin — EasyBuy Gifts</div>
-      <div class="muted">Secure management panel</div>
+  <div class="container">
+    <div class="footer-bottom">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.2rem;">🛡️</span>
+        <div>
+            <div style="font-weight:700;">EasyBuy Admin Control</div>
+            <div class="muted" style="font-size:12px;">Secure Session: Active</div>
+        </div>
+      </div>
+      <div class="muted">© <?= date('Y') ?> Management Dashboard</div>
     </div>
-    <div class="footer-right muted">© <?= date('Y') ?> EasyBuy Gifts</div>
   </div>
 </footer>
 
-</div><!-- /.page-wrap -->
-
-<script>
+</div><script>
 (function(){
   const key = "theme";
   const btn = document.getElementById("themeToggle");
