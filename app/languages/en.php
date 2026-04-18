@@ -210,5 +210,17 @@ return [
     'footer_tg_admin' => 'Chat with Admin',
     'footer_about_title' => 'EasyBuy Gifts',
     'footer_about_desc' => 'EasyBuy Gifts is your trusted marketplace for authentic souvenirs and premium gift cards. We ensure secure transactions and 24/7 automated delivery.',
-  
+    // F.A.Q
+    'faq_title' => 'Frequently Asked Questions',
+    'faq_subtitle' => 'Everything you need to know about our marketplace and services.',
+    'btn_back_home' => 'Back to Home',
+    'faq_q1' => 'How can I make a purchase?',
+    'faq_a1' => 'Select the product you like, add it to the cart, and proceed to checkout. Once payment is confirmed, the product will instantly appear in your account.',
+    'faq_q2' => 'What are the payment methods?',
+    'faq_a2' => 'We accept Click, Payme, and Bank transfers. You can also top up your internal wallet and use it for purchases.',
+    'faq_q3' => 'Are my purchases secure?',
+    'faq_a3' => 'Yes, all transactions are protected. We only work with official and verified services.',
+    'faq_q4' => 'What if I have a problem?',
+    'faq_a4' => 'If you have any questions or issues, you can contact the admin via the Telegram button in the footer. We are available 24/7.',
+
     ];
