@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-session_start();
+// session_start() is inside lang.php/auth.php
 require_once __DIR__ . '/../app/config/database.php';
 require_once __DIR__ . '/../app/helpers/auth.php';
+require_once __DIR__ . '/../app/helpers/lang.php'; // Added lang helper
 require __DIR__ . '/_layout.php';
 
 if (!isset($_SESSION['csrf']) || !is_string($_SESSION['csrf'])) {
@@ -14,9 +15,7 @@ $errors = [];
 $email = '';
 
 /**
- * Safe next redirect target (PHP 7.4 compatible)
- * - must start with "/"
- * - must NOT contain "://"
+ * Safe next redirect target
  */
 function sanitize_next(string $next): string {
     $next = trim($next);
@@ -26,35 +25,27 @@ function sanitize_next(string $next): string {
     return $next;
 }
 
-// Read next from GET for initial page load
 $next = sanitize_next((string)($_GET['next'] ?? '/index.php'));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf = (string)($_POST['csrf'] ?? '');
     if (!hash_equals($_SESSION['csrf'], $csrf)) {
         http_response_code(403);
-        $errors[] = 'Request blocked.';
+        $errors[] = __('err_csrf');
     } else {
-        // IMPORTANT: keep next across POST
         $next = sanitize_next((string)($_POST['next'] ?? '/index.php'));
-
         $email = trim((string)($_POST['email'] ?? ''));
         $pass  = (string)($_POST['password'] ?? '');
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Invalid email or password.';
+            $errors[] = __('err_invalid_credentials');
         } else {
-            $stmt = $pdo->prepare(
-                "SELECT id, name, email, password_hash, role
-                 FROM users
-                 WHERE email = ?
-                 LIMIT 1"
-            );
+            $stmt = $pdo->prepare("SELECT id, name, email, password_hash, role FROM users WHERE email = ? LIMIT 1");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
             if (!$user || !password_verify($pass, (string)$user['password_hash'])) {
-                $errors[] = 'Invalid email or password.';
+                $errors[] = __('err_invalid_credentials');
             } else {
                 session_regenerate_id(true);
 
@@ -65,10 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'role'  => (string)$user['role'],
                 ];
 
-                // rotate CSRF after login
                 $_SESSION['csrf'] = bin2hex(random_bytes(32));
-
-                // Clean UX: no "Logged in successfully" flash
                 header('Location: ' . $next, true, 303);
                 exit;
             }
@@ -82,7 +70,7 @@ $cartCount = isset($_SESSION['cart']) && is_array($_SESSION['cart'])
     ? array_sum($_SESSION['cart'])
     : 0;
 
-layout_header('Login', null, $cartCount);
+layout_header(__('nav_login'), null, $cartCount);
 ?>
 
 <div class="container auth-page" style="max-width:520px;">
@@ -91,19 +79,19 @@ layout_header('Login', null, $cartCount);
 
     <div style="text-align:center; margin-bottom:16px;">
       <div style="font-size:42px;">🔐</div>
-      <h1 style="margin:6px 0;">Welcome back</h1>
-      <div class="muted">Login to your EasyBuy Gifts account</div>
+      <h1 style="margin:6px 0;"><?= __('title_welcome_back') ?></h1>
+      <div class="muted"><?= __('desc_login') ?></div>
     </div>
 
     <?php if ($registered): ?>
       <div class="alert alert-ok" style="margin-bottom:12px;">
-        ✅ Registered successfully. Please log in.
+        ✅ <?= __('flash_registered_success') ?>
       </div>
     <?php endif; ?>
 
     <?php if (!empty($_GET['next'])): ?>
       <div class="alert" style="margin-bottom:12px;">
-        Please log in to continue.
+        <?= __('alert_login_required') ?>
       </div>
     <?php endif; ?>
 
@@ -120,40 +108,28 @@ layout_header('Login', null, $cartCount);
     <form method="post" class="form" autocomplete="off">
       <input type="hidden" name="csrf"
              value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
-
-      <!-- Keep next across POST -->
       <input type="hidden" name="next"
              value="<?= htmlspecialchars($next, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
 
-      <label for="email">Email</label>
-      <input
-        id="email"
-        name="email"
-        type="email"
-        value="<?= htmlspecialchars($email, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"
-        required
-      >
+      <label for="email"><?= __('label_email') ?></label>
+      <input id="email" name="email" type="email" 
+             value="<?= htmlspecialchars($email, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" required>
 
-      <label for="password">Password</label>
-      <input
-        id="password"
-        name="password"
-        type="password"
-        required
-      >
+      <label for="password"><?= __('label_password') ?></label>
+      <input id="password" name="password" type="password" required>
 
       <button class="btn btn-primary" type="submit" style="margin-top:6px; width:100%;">
-        Login
+        <?= __('nav_login') ?>
       </button>
     </form>
 
     <div style="margin-top:14px; text-align:center;">
-      <span class="muted">No account?</span>
-      <a href="register.php?next=<?= urlencode($next) ?>">Register</a>
+      <span class="muted"><?= __('text_no_account') ?></span>
+      <a href="register.php?next=<?= urlencode($next) ?>"><?= __('nav_register') ?></a>
     </div>
 
     <div style="margin-top:10px; text-align:center;">
-      <a class="pill" href="<?= htmlspecialchars($next, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">← Back</a>
+      <a class="pill" href="<?= htmlspecialchars($next, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">← <?= __('btn_back') ?></a>
     </div>
 
   </section>
