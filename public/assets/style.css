@@ -651,11 +651,6 @@ tr:hover td{
 
 
 
-
-
-
-
-
 .flash{
   display:flex;
   align-items:center;
@@ -710,3 +705,116 @@ tr:hover td{
   border-color: rgba(231,76,60,.50);
   background: rgba(231,76,60,.14);
 }
+
+
+
+/* ============================================================
+   UPDATED FOOTER CSS (HOVER EFFEKTI BILAN)
+   ============================================================ */
+
+.site-footer {
+  background: var(--card-bg); /* Glassmorphism fon */
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  padding: 60px 0 30px;
+  margin-top: 80px;
+}
+
+.footer-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.feat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px;
+  background: var(--surface2);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+}
+
+.feat-icon { font-size: 2rem; }
+.feat-info h4 { margin: 0; font-size: 1.1rem; color: var(--text); }
+.feat-info p { margin: 5px 0 0; font-size: 0.85rem; color: var(--muted); line-height: 1.4; }
+
+.footer-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  gap: 50px;
+  margin-bottom: 50px;
+}
+
+.footer-heading {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 25px;
+  color: var(--accent); /* Binafsha rang sarlavha */
+}
+
+.foot-nav { list-style: none; padding: 0; margin: 0; }
+.foot-nav li { margin-bottom: 12px; }
+.foot-nav a { text-decoration: none; color: var(--muted); transition: 0.2s; }
+.foot-nav a:hover { color: var(--accent); padding-left: 8px; }
+
+.social-stack { display: flex; flex-direction: column; gap: 15px; }
+
+/*SOCIAL BUTTONS */
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  padding: 14px 20px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 700;
+  border: 1px solid var(--line);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* TUGMA USTIGA BORGANDA (HOVER) - MUAMMO SHU YERDA EDI */
+.social-link:hover {
+  transform: scale(1.03) translateY(-3px);
+  background: var(--surface-hover); /* Oq emas, shaffof to'qroq fon */
+  border-color: var(--accent);
+  color: var(--text) !important; /* Yozuv rangi o'zgarmasligi uchun */
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Telegram uchun maxsus hover rangi */
+.social-link.tg-chan:hover {
+  background: rgba(34, 158, 217, 0.1); /* Telegram ko'k rangli shaffof fon */
+  border-color: #229ED9;
+}
+
+/* Admin bilan suhbat uchun maxsus hover rangi */
+.social-link.tg-admin:hover {
+  background: rgba(139, 92, 246, 0.1); /* Binafsha shaffof fon */
+  border-color: var(--accent);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--line);
+  padding-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Responsive Fixes */
+@media (max-width: 900px) {
+  .footer-main-grid { grid-template-columns: 1fr; gap: 40px; }
+  .footer-bottom { flex-direction: column; gap: 15px; text-align: center; }
+}
+
+
+
