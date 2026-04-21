@@ -6,6 +6,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 require_once __DIR__ . '/../app/config/database.php';
+require_once __DIR__ . '/../app/helpers/lang.php'; // Added lang helper
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -27,7 +28,7 @@ function safe_return_url(string $raw, string $fallback): string {
     $raw = trim($raw);
     if ($raw === '') return $fallback;
 
-    if (preg_match('/^[a-zA-Z][a-zA-Z0-9+.-]*:/', $raw)) return $fallback; // http:, https:, javascript:
+    if (preg_match('/^[a-zA-Z][a-zA-Z0-9+.-]*:/', $raw)) return $fallback; 
     if (starts_with($raw, '//')) return $fallback;
     if (starts_with($raw, '/')) return $raw;
     if (contains_str($raw, '\\')) return $fallback;
@@ -85,7 +86,8 @@ if (!$row) {
 
 $stock = (int)($row['stock'] ?? 0);
 if ($stock <= 0) {
-    flash_set('bad', 'Out of stock ❌');
+    // TRANSLATED FLASH
+    flash_set('bad', __('flash_out_of_stock') . ' ❌');
     header('Location: ' . $returnTo, true, 303);
     exit;
 }
@@ -102,11 +104,11 @@ $requested = $current + (int)$quantity;
 $newQty = ($requested > $stock) ? $stock : $requested;
 $_SESSION['cart'][$productId] = $newQty;
 
-// Flash
+// TRANSLATED FLASHES
 if ($requested > $stock) {
-    flash_set('ok', 'Added to cart (max available stock)');
+    flash_set('ok', __('flash_added_max'));
 } else {
-    flash_set('ok', 'Added to cart');
+    flash_set('ok', __('flash_added'));
 }
 
 // Post/Redirect/Get
