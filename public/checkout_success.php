@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-session_start();
+// session_start() is inside lang.php/auth.php
 require_once __DIR__ . '/../app/config/database.php';
 require_once __DIR__ . '/../app/helpers/auth.php';
+require_once __DIR__ . '/../app/helpers/lang.php'; // Added lang helper
 require __DIR__ . '/_layout.php';
 
 require_login();
@@ -15,8 +16,8 @@ $orderId = filter_var($_GET['order_id'] ?? null, FILTER_VALIDATE_INT, [
 ]);
 if (!$orderId) {
     http_response_code(400);
-    layout_header('Order', $user, 0);
-    echo '<div class="container"><div class="card" style="padding:16px">Invalid order.</div></div>';
+    layout_header(__('nav_order'), $user, 0);
+    echo '<div class="container"><div class="card" style="padding:16px">' . __('err_invalid_order') . '</div></div>';
     layout_footer();
     exit;
 }
@@ -33,8 +34,8 @@ $order = $stmt->fetch();
 
 if (!$order) {
     http_response_code(404);
-    layout_header('Order', $user, 0);
-    echo '<div class="container"><div class="card" style="padding:16px">Order not found.</div></div>';
+    layout_header(__('nav_order'), $user, 0);
+    echo '<div class="container"><div class="card" style="padding:16px">' . __('err_order_not_found') . '</div></div>';
     layout_footer();
     exit;
 }
@@ -49,12 +50,11 @@ $stmt = $pdo->prepare("
 $stmt->execute([$orderId]);
 $items = $stmt->fetchAll();
 
-/** cart count (should be empty now, but safe) */
 $cartCount = isset($_SESSION['cart']) && is_array($_SESSION['cart'])
     ? array_sum($_SESSION['cart'])
     : 0;
 
-layout_header('Order Success', $user, $cartCount);
+layout_header(__('title_order_success'), $user, $cartCount);
 ?>
 
 <div class="container">
@@ -62,15 +62,15 @@ layout_header('Order Success', $user, $cartCount);
   <section class="card" style="padding:22px; text-align:center; max-width:760px; margin:0 auto;">
     <div style="font-size:56px; margin-bottom:6px;">🎉</div>
 
-    <h1 style="margin:6px 0 6px;">Order placed successfully</h1>
+    <h1 style="margin:6px 0 6px;"><?= __('order_placed_success') ?></h1>
 
     <div class="muted" style="margin-bottom:14px;">
-      Thank you, <?= htmlspecialchars($user['name'], ENT_QUOTES) ?>.
-      Your payment was successful and your order has been created.
+      <?= __('order_thanks') ?>, <?= htmlspecialchars($user['name'], ENT_QUOTES) ?>.
+      <?= __('order_confirm_msg') ?>
     </div>
 
     <div class="pill" style="margin-bottom:14px;">
-      Order #<?= (int)$order['id'] ?> • <?= htmlspecialchars($order['status']) ?>
+      <?= __('label_order') ?> #<?= (int)$order['id'] ?> • <?= __('status_' . ($order['status'] ?? 'pending')) ?>
     </div>
 
     <div style="font-size:34px; font-weight:950; margin-bottom:10px;">
@@ -78,7 +78,7 @@ layout_header('Order Success', $user, $cartCount);
     </div>
 
     <div class="muted" style="font-size:13px;">
-      Placed on <?= htmlspecialchars($order['created_at']) ?>
+      <?= __('label_placed_on') ?> <?= htmlspecialchars($order['created_at']) ?>
     </div>
   </section>
 
@@ -87,8 +87,8 @@ layout_header('Order Success', $user, $cartCount);
   <section>
     <div style="display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <div>
-        <div class="muted">What you bought</div>
-        <h2 style="margin:6px 0 0">Order items</h2>
+        <div class="muted"><?= __('order_what_bought') ?></div>
+        <h2 style="margin:6px 0 0"><?= __('order_items_title') ?></h2>
       </div>
     </div>
 
@@ -97,11 +97,7 @@ layout_header('Order Success', $user, $cartCount);
         <div class="card product-card">
           <div class="product-media">
             <?php if (!empty($it['image'])): ?>
-              <img
-                src="image.php?f=<?= urlencode($it['image']) ?>"
-                alt=""
-                style="width:100%;height:100%;object-fit:cover;display:block;"
-              >
+              <img src="image.php?f=<?= urlencode($it['image']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
             <?php else: ?>
               <div>🖼️</div>
             <?php endif; ?>
@@ -112,7 +108,7 @@ layout_header('Order Success', $user, $cartCount);
               <?= htmlspecialchars($it['name'], ENT_QUOTES) ?>
             </div>
             <div class="product-meta">
-              <div class="muted">Qty: <?= (int)$it['quantity'] ?></div>
+              <div class="muted"><?= __('label_qty') ?>: <?= (int)$it['quantity'] ?></div>
               <div class="price">$<?= number_format((float)$it['price'], 2) ?></div>
             </div>
           </div>
@@ -125,8 +121,8 @@ layout_header('Order Success', $user, $cartCount);
 
   <section class="card" style="padding:16px; text-align:center;">
     <div class="hero-actions" style="justify-content:center;">
-      <a class="btn btn-primary" href="index.php">Continue shopping</a>
-      <a class="btn" href="my_account.php">My orders</a>
+      <a class="btn btn-primary" href="index.php"><?= __('btn_continue_shopping') ?></a>
+      <a class="btn" href="my_account.php"><?= __('btn_my_orders') ?></a>
     </div>
   </section>
 
