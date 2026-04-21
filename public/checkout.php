@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-session_start();
+// session_start() is inside lang.php/auth.php
 require_once __DIR__ . '/../app/config/database.php';
 require_once __DIR__ . '/../app/helpers/auth.php';
+require_once __DIR__ . '/../app/helpers/lang.php'; // Added lang helper
 require __DIR__ . '/_layout.php';
 
 require_login();
@@ -18,8 +19,8 @@ $err = '';
 $cart = $_SESSION['cart'] ?? [];
 if (!is_array($cart) || count($cart) === 0) {
     http_response_code(400);
-    layout_header('Checkout', $user, 0);
-    echo '<div class="container"><div class="card" style="padding:16px">Cart is empty.</div></div>';
+    layout_header(__('nav_checkout'), $user, 0);
+    echo '<div class="container"><div class="card" style="padding:16px">' . __('cart_empty') . '</div></div>';
     layout_footer();
     exit;
 }
@@ -27,19 +28,18 @@ if (!is_array($cart) || count($cart) === 0) {
 /** cart count */
 $cartCount = array_sum(array_map('intval', $cart));
 
-/** Load products from DB (do NOT trust session values for price/stock) */
+/** Load products from DB */
 $productIds = array_keys($cart);
 $productIds = array_values(array_filter($productIds, fn($v) => is_int($v) || ctype_digit((string)$v)));
 if (count($productIds) === 0) {
     http_response_code(400);
-    layout_header('Checkout', $user, $cartCount);
-    echo '<div class="container"><div class="card" style="padding:16px">Cart is empty.</div></div>';
+    layout_header(__('nav_checkout'), $user, $cartCount);
+    echo '<div class="container"><div class="card" style="padding:16px">' . __('cart_empty') . '</div></div>';
     layout_footer();
     exit;
 }
 
 $placeholders = implode(',', array_fill(0, count($productIds), '?'));
-
 $stmt = $pdo->prepare("SELECT id, name, price, stock, image FROM products WHERE id IN ($placeholders)");
 $stmt->execute($productIds);
 $products = $stmt->fetchAll();
@@ -49,7 +49,7 @@ foreach ($products as $p) {
     $map[(int)$p['id']] = $p;
 }
 
-/** Build checkout items + calculate total safely */
+/** Build checkout items */
 $items = [];
 $total = 0.0;
 
@@ -82,8 +82,8 @@ foreach ($productIds as $pid) {
 
 if (count($items) === 0) {
     http_response_code(400);
-    layout_header('Checkout', $user, $cartCount);
-    echo '<div class="container"><div class="card" style="padding:16px">No valid items in cart.</div></div>';
+    layout_header(__('nav_checkout'), $user, $cartCount);
+    echo '<div class="container"><div class="card" style="padding:16px">' . __('checkout_no_items') . '</div></div>';
     layout_footer();
     exit;
 }
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf = (string)($_POST['csrf'] ?? '');
     if (!hash_equals($_SESSION['csrf'], $csrf)) {
         http_response_code(403);
-        $err = 'Request blocked.';
+        $err = __('err_csrf');
     } else {
         try {
             $pdo->beginTransaction();
@@ -103,7 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('User not found');
             }
 
-            // Lock user row and check balance (prevents race condition)
             $stmt = $pdo->prepare("SELECT balance FROM users WHERE id = ? LIMIT 1 FOR UPDATE");
             $stmt->execute([$userId]);
             $row = $stmt->fetch();
@@ -118,30 +117,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('Insufficient balance');
             }
 
-            // Create order
             $stmt = $pdo->prepare("INSERT INTO orders (user_id, total, status) VALUES (?, ?, 'pending')");
             $stmt->execute([$userId, $total]);
             $orderId = (int)$pdo->lastInsertId();
 
-            // Insert order items + reduce stock safely
             $itemStmt  = $pdo->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
             $stockStmt = $pdo->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?");
 
             foreach ($items as $it) {
                 $itemStmt->execute([$orderId, $it['id'], $it['qty'], $it['price']]);
-
                 $stockStmt->execute([$it['qty'], $it['id'], $it['qty']]);
                 if ($stockStmt->rowCount() !== 1) {
                     throw new RuntimeException('Stock update failed');
                 }
             }
 
-            // Deduct balance
             $newBalance = $balance - $total;
             $stmt = $pdo->prepare("UPDATE users SET balance = ? WHERE id = ? LIMIT 1");
             $stmt->execute([$newBalance, $userId]);
 
-            // Log wallet purchase
             $stmt = $pdo->prepare("
               INSERT INTO wallet_transactions (user_id, type, amount, note, created_by_admin_id)
               VALUES (?, 'purchase', ?, ?, NULL)
@@ -150,7 +144,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->commit();
 
-            // Clear cart + rotate CSRF after success
             $_SESSION['cart'] = [];
             $_SESSION['csrf'] = bin2hex(random_bytes(32));
 
@@ -160,27 +153,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
 
-            // Don’t leak internal errors
             if ($e instanceof RuntimeException && $e->getMessage() === 'Insufficient balance') {
-                $err = 'Not enough balance. Please top up your account.';
+                $err = __('err_insufficient_balance');
             } else {
-                $err = 'Checkout failed. Please try again.';
+                $err = __('err_checkout_failed');
             }
         }
     }
 }
 
-layout_header('Checkout', $user, $cartCount);
+layout_header(__('nav_checkout'), $user, $cartCount);
 ?>
 
 <div class="container">
 
   <div style="display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:12px">
     <div>
-      <div class="muted">Final step</div>
-      <h1 style="margin:6px 0 0">Checkout</h1>
+      <div class="muted"><?= __('checkout_final_step') ?></div>
+      <h1 style="margin:6px 0 0"><?= __('nav_checkout') ?></h1>
     </div>
-    <a class="pill" href="cart.php">← Back to cart</a>
+    <a class="pill" href="cart.php">← <?= __('btn_back_cart') ?></a>
   </div>
 
   <?php if ($err !== ''): ?>
@@ -191,20 +183,15 @@ layout_header('Checkout', $user, $cartCount);
 
   <div class="grid" style="grid-template-columns: 1.2fr .8fr; align-items:start;">
 
-    <!-- LEFT: Items -->
     <section class="card" style="padding:14px;">
-      <div class="muted" style="margin-bottom:10px;">Order items (verified from database)</div>
+      <div class="muted" style="margin-bottom:10px;"><?= __('checkout_items_verified') ?></div>
 
       <?php foreach ($items as $it): ?>
         <div style="display:flex; gap:12px; padding:12px; border:1px solid rgba(255,255,255,.10); border-radius:18px; background: rgba(255,255,255,.03); margin-bottom:12px;">
           <a href="product.php?id=<?= urlencode((string)$it['id']) ?>" style="width:120px; flex: 0 0 120px;">
             <div class="product-media" style="aspect-ratio: 4/3; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.10);">
               <?php if (!empty($it['image'])): ?>
-                <img
-                  src="image.php?f=<?= urlencode($it['image']) ?>"
-                  alt=""
-                  style="width:100%;height:100%;object-fit:cover;display:block;"
-                >
+                <img src="image.php?f=<?= urlencode($it['image']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
               <?php else: ?>
                 <div>🖼️</div>
               <?php endif; ?>
@@ -217,46 +204,44 @@ layout_header('Checkout', $user, $cartCount);
                 <div style="font-weight:950; font-size:16px;">
                   <?= htmlspecialchars($it['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
                 </div>
-                <div class="muted" style="margin-top:4px;">Qty: <?= (int)$it['qty'] ?></div>
+                <div class="muted" style="margin-top:4px;"><?= __('label_qty') ?>: <?= (int)$it['qty'] ?></div>
               </div>
 
               <div style="text-align:right;">
-                <div class="muted" style="font-size:12px;">Line total</div>
+                <div class="muted" style="font-size:12px;"><?= __('label_line_total') ?></div>
                 <div style="font-weight:950;">$<?= number_format($it['line'], 2) ?></div>
               </div>
             </div>
 
             <div class="muted" style="margin-top:8px; font-size:12px;">
-              Price: $<?= number_format($it['price'], 2) ?> • Stock checked
+              <?= __('label_price') ?>: $<?= number_format($it['price'], 2) ?> • <?= __('pill_stock') ?>
             </div>
           </div>
         </div>
       <?php endforeach; ?>
     </section>
 
-    <!-- RIGHT: Summary + Place Order -->
     <aside class="card" style="padding:16px;">
-      <div class="muted">Order summary</div>
+      <div class="muted"><?= __('order_summary') ?></div>
       <div style="font-size:34px; font-weight:950; margin:6px 0 10px;">
         $<?= number_format($total, 2) ?>
       </div>
 
       <div class="muted" style="line-height:1.6; margin-bottom:12px;">
-        We will deduct this amount from your wallet and create the order.
-        Stock and balance are verified inside a transaction.
+        <?= __('checkout_deduction_note') ?>
       </div>
 
       <form method="post">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
-        <button class="btn btn-primary" type="submit" style="width:100%;">Place order</button>
+        <button class="btn btn-primary" type="submit" style="width:100%;"><?= __('btn_place_order') ?></button>
       </form>
 
       <div style="height:10px"></div>
-      <a class="btn" style="width:100%;" href="my_account.php">View wallet</a>
+      <a class="btn" style="width:100%;" href="my_account.php"><?= __('btn_view_wallet') ?></a>
 
       <div style="margin-top:12px;">
-        <div class="pill">CSRF protected</div>
-        <div class="pill" style="margin-left:6px;">DB totals</div>
+        <div class="pill"><?= __('pill_csrf') ?></div>
+        <div class="pill" style="margin-left:6px;"><?= __('pill_db_totals') ?></div>
       </div>
     </aside>
   </div>
