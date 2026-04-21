@@ -39,10 +39,13 @@ switch ($ext) {
         break;
 }
 
-// Output headers and file
+// Security & Caching Headers
 header('Content-Type: ' . $mime);
 header('X-Content-Type-Options: nosniff');
 header('Content-Length: ' . filesize($path));
+
+// Browser cache: Tell browser to keep image for 30 days
+header('Cache-Control: public, max-age=2592000'); 
 
 readfile($path);
 exit;
